@@ -140,6 +140,10 @@ export default function Results({ result, onReset }: ResultsProps) {
         </>
       )}
 
+      <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
+        <span className="font-semibold">Heads up:</span> Some accounts shown may be deactivated or private. Instagram only reveals this when you&rsquo;re logged in — we can&rsquo;t detect it from the outside. Click any username to verify manually.
+      </p>
+
       <button
         onClick={onReset}
         className="mx-auto flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
