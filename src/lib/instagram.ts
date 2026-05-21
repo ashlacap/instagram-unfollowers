@@ -19,14 +19,23 @@ interface RelationshipEntry {
 function extractUsers(entries: RelationshipEntry[]): InstagramUser[] {
   const users: InstagramUser[] = [];
   for (const entry of entries) {
-    for (const item of entry.string_list_data) {
-      if (item.value) {
-        users.push({
-          username: item.value,
-          href: item.href || `https://www.instagram.com/${item.value}`,
-          timestamp: item.timestamp,
-        });
-      }
+    const items = entry.string_list_data ?? [];
+    const valueItem = items.find((item) => item.value);
+    if (valueItem) {
+      // Standard format: username in string_list_data[].value
+      users.push({
+        username: valueItem.value,
+        href: valueItem.href || `https://www.instagram.com/${valueItem.value}`,
+        timestamp: valueItem.timestamp,
+      });
+    } else if (entry.title) {
+      // Newer export format: username is in the top-level title field
+      const href = items[0]?.href || `https://www.instagram.com/${entry.title}`;
+      users.push({
+        username: entry.title,
+        href,
+        timestamp: items[0]?.timestamp ?? 0,
+      });
     }
   }
   return users;
