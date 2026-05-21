@@ -30,9 +30,11 @@ export async function POST(request: Request) {
     const allFollowing: InstagramUser[] = [];
     let foundFollowers = false;
     let foundFollowing = false;
+    let followingRawSample = "";
 
     const zip = new AdmZip(buffer);
     const entries = zip.getEntries();
+    const allEntryNames = entries.map((e) => e.entryName);
 
     for (const entry of entries) {
       const name = entry.entryName.toLowerCase();
@@ -53,6 +55,7 @@ export async function POST(request: Request) {
       // Match following.json or following_1.json, etc.
       if (/^following(_\d+)?\.json$/.test(basename)) {
         const content = entry.getData();
+        followingRawSample = content.toString("utf-8").slice(0, 300);
         const json = parseJson(content);
         if (json) {
           const users = parseFollowing(json);
@@ -64,30 +67,27 @@ export async function POST(request: Request) {
 
     if (!foundFollowers && !foundFollowing) {
       return Response.json(
-        {
-          error:
-            "Could not find followers or following data. Make sure you uploaded the correct Instagram data export ZIP (JSON format).",
-        },
+        { error: `Could not find followers or following data. Files found in ZIP: ${allEntryNames.join(", ")}` },
         { status: 422 }
       );
     }
 
     if (!foundFollowers) {
       return Response.json(
-        { error: "Followers file not found in the ZIP. Expected 'followers_and_following/followers_1.json'." },
+        { error: `Followers file not found. Files found in ZIP: ${allEntryNames.join(", ")}` },
         { status: 422 }
       );
     }
 
     if (!foundFollowing) {
       return Response.json(
-        { error: "Following file not found in the ZIP. Expected 'followers_and_following/following.json'." },
+        { error: `Following file not found. Files found in ZIP: ${allEntryNames.join(", ")}` },
         { status: 422 }
       );
     }
 
     const result = analyzeFollowers(allFollowers, allFollowing);
-    return Response.json(result);
+    return Response.json({ ...result, _debug: followingRawSample });
   } catch (err) {
     console.error("Analyze error:", err);
     return Response.json(
