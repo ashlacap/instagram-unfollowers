@@ -19,6 +19,12 @@ const steps = [
   },
   {
     number: "4",
+    title: "Change the date range to All Time",
+    description:
+      'Before creating the files, make sure the date range is set to "All time" so your complete followers and following lists are included.',
+  },
+  {
+    number: "5",
     title: "Download and upload here",
     description:
       "Download the ZIP file Instagram sends you, then drag and drop it into the upload area above.",
