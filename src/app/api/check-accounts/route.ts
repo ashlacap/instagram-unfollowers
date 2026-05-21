@@ -1,5 +1,4 @@
 async function accountExists(username: string): Promise<boolean> {
-  // Instagram renames deleted accounts with __deleted__ prefix
   if (username.toLowerCase().includes("__deleted__")) return false;
 
   try {
@@ -15,25 +14,29 @@ async function accountExists(username: string): Promise<boolean> {
     });
 
     if (res.status === 404) return false;
-    if (res.status === 302 || res.status === 301) {
-      // Redirect to login page means account may be private or deleted
-      const location = res.headers.get("location") ?? "";
-      if (location.includes("/accounts/login")) return false;
-    }
     if (!res.ok) return true;
 
     const text = await res.text();
-    if (
-      text.includes("Sorry, this page") ||
-      text.includes("page isn’t available") ||
-      text.includes("page isn't available") ||
-      text.includes("content unavailable")
-    ) {
-      return false;
-    }
+
+    // Instagram server-renders "Page Not Found" in the <title> for deleted/unavailable accounts.
+    // The "Sorry, this page isn't available" message is client-side JS, so we rely on the title instead.
+    if (/<title>\s*Page Not Found/i.test(text)) return false;
+    if (/og:title[^>]*Page Not Found/i.test(text)) return false;
+
+    // If Instagram redirected us to the login page (no cookies on server)
+    // the title will be "Login" — that means we can't confirm existence either way, keep it.
+    // But if the page has no recognisable Instagram profile signals, mark as gone.
+    const hasProfileSignal =
+      new RegExp(`"username"\\s*:\\s*"${username}"`, "i").test(text) ||
+      text.includes(`@${username}`) ||
+      text.includes(`/${username}/`);
+
+    // If the page has no mention of the username at all, it likely doesn't exist
+    if (!hasProfileSignal) return false;
+
     return true;
   } catch {
-    return true; // network/timeout — keep in list
+    return true;
   }
 }
 
