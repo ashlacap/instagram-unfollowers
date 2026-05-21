@@ -19,20 +19,9 @@ async function accountExists(username: string): Promise<boolean> {
     const text = await res.text();
 
     // Instagram server-renders "Page Not Found" in the <title> for deleted/unavailable accounts.
-    // The "Sorry, this page isn't available" message is client-side JS, so we rely on the title instead.
+    // This is the only reliable signal — "Sorry, this page isn't available" is added by JS later.
     if (/<title>\s*Page Not Found/i.test(text)) return false;
     if (/og:title[^>]*Page Not Found/i.test(text)) return false;
-
-    // If Instagram redirected us to the login page (no cookies on server)
-    // the title will be "Login" — that means we can't confirm existence either way, keep it.
-    // But if the page has no recognisable Instagram profile signals, mark as gone.
-    const hasProfileSignal =
-      new RegExp(`"username"\\s*:\\s*"${username}"`, "i").test(text) ||
-      text.includes(`@${username}`) ||
-      text.includes(`/${username}/`);
-
-    // If the page has no mention of the username at all, it likely doesn't exist
-    if (!hasProfileSignal) return false;
 
     return true;
   } catch {
