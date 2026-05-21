@@ -68,10 +68,13 @@ export async function POST(request: Request) {
       }
     }
 
-    // Remove pending requests from the following list — they aren't real follows yet
-    const confirmedFollowing = allFollowing.filter(
-      (u) => !pendingUsernames.has(u.username.toLowerCase())
-    );
+    // Remove pending requests and Instagram-renamed deleted accounts
+    const confirmedFollowing = allFollowing.filter((u) => {
+      const lower = u.username.toLowerCase();
+      if (pendingUsernames.has(lower)) return false;
+      if (lower.includes("__deleted__")) return false;
+      return true;
+    });
 
     if (!foundFollowers && !foundFollowing) {
       return Response.json(

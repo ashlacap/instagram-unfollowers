@@ -49,18 +49,18 @@ export function parseFollowers(json: unknown): InstagramUser[] {
   return [];
 }
 
+// Generic parser — works for following.json, pending_follow_requests.json, etc.
+// Handles both top-level arrays and objects with any single array key.
 export function parseFollowing(json: unknown): InstagramUser[] {
-  // following.json wraps entries under "relationships_following"
-  if (json && typeof json === "object" && !Array.isArray(json)) {
-    const obj = json as Record<string, unknown>;
-    const key = Object.keys(obj).find((k) => k.includes("following"));
-    if (key && Array.isArray(obj[key])) {
-      return extractUsers(obj[key] as RelationshipEntry[]);
-    }
-  }
-  // Fallback: top-level array
   if (Array.isArray(json)) {
     return extractUsers(json as RelationshipEntry[]);
+  }
+  if (json && typeof json === "object") {
+    const obj = json as Record<string, unknown>;
+    const arrayKey = Object.keys(obj).find((k) => Array.isArray(obj[k]));
+    if (arrayKey) {
+      return extractUsers(obj[arrayKey] as RelationshipEntry[]);
+    }
   }
   return [];
 }
