@@ -98,7 +98,7 @@ export async function POST(request: Request) {
     }
 
     const result = analyzeFollowers(allFollowers, confirmedFollowing);
-    return Response.json(result);
+    return Response.json({ ...result, _pendingCount: pendingUsernames.size });
   } catch (err) {
     console.error("Analyze error:", err);
     return Response.json(
