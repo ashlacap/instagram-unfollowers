@@ -28,6 +28,7 @@ export async function POST(request: Request) {
 
     const allFollowers: InstagramUser[] = [];
     const allFollowing: InstagramUser[] = [];
+    const pendingUsernames = new Set<string>();
     let foundFollowers = false;
     let foundFollowing = false;
 
@@ -35,31 +36,42 @@ export async function POST(request: Request) {
     const entries = zip.getEntries();
     for (const entry of entries) {
       const name = entry.entryName.toLowerCase();
-      // Use just the filename for matching, ignoring folder structure
       const basename = name.split("/").pop() ?? name;
 
-      // Match followers_1.json, followers_2.json, followers.json, etc.
       if (/^followers(_\d+)?\.json$/.test(basename)) {
         const content = entry.getData();
         const json = parseJson(content);
         if (json) {
-          const users = parseFollowers(json);
-          allFollowers.push(...users);
+          allFollowers.push(...parseFollowers(json));
           foundFollowers = true;
         }
       }
 
-      // Match following.json or following_1.json, etc.
       if (/^following(_\d+)?\.json$/.test(basename)) {
         const content = entry.getData();
         const json = parseJson(content);
         if (json) {
-          const users = parseFollowing(json);
-          allFollowing.push(...users);
+          allFollowing.push(...parseFollowing(json));
           foundFollowing = true;
         }
       }
+
+      // Collect pending follow requests so we can exclude them
+      if (basename === "pending_follow_requests.json") {
+        const content = entry.getData();
+        const json = parseJson(content);
+        if (json) {
+          parseFollowing(json).forEach((u) =>
+            pendingUsernames.add(u.username.toLowerCase())
+          );
+        }
+      }
     }
+
+    // Remove pending requests from the following list — they aren't real follows yet
+    const confirmedFollowing = allFollowing.filter(
+      (u) => !pendingUsernames.has(u.username.toLowerCase())
+    );
 
     if (!foundFollowers && !foundFollowing) {
       return Response.json(
@@ -82,7 +94,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const result = analyzeFollowers(allFollowers, allFollowing);
+    const result = analyzeFollowers(allFollowers, confirmedFollowing);
     return Response.json(result);
   } catch (err) {
     console.error("Analyze error:", err);
