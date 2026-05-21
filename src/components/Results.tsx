@@ -141,7 +141,7 @@ export default function Results({ result, onReset }: ResultsProps) {
       )}
 
       <p className="rounded-xl bg-amber-50 px-4 py-3 text-xs text-amber-700">
-        <span className="font-semibold">Heads up:</span> Some accounts shown may be deactivated or private. Instagram only reveals this when you&rsquo;re logged in — we can&rsquo;t detect it from the outside. Click any username to verify manually.
+        <span className="font-semibold">Heads up: </span> Some accounts shown may be deactivated or private. Instagram only reveals this when you&rsquo;re logged in — we can&rsquo;t detect it from the outside. Click any username to verify manually.
       </p>
 
       <button
