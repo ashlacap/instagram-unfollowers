@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(arrayBuffer);
 
     const allFollowers: InstagramUser[] = [];
-    let allFollowing: InstagramUser[] = [];
+    const allFollowing: InstagramUser[] = [];
     let foundFollowers = false;
     let foundFollowing = false;
 
@@ -36,12 +36,11 @@ export async function POST(request: Request) {
 
     for (const entry of entries) {
       const name = entry.entryName.toLowerCase();
+      // Use just the filename for matching, ignoring folder structure
+      const basename = name.split("/").pop() ?? name;
 
-      // Match followers_1.json, followers_2.json, etc.
-      if (
-        name.includes("followers_and_following/followers") &&
-        name.endsWith(".json")
-      ) {
+      // Match followers_1.json, followers_2.json, followers.json, etc.
+      if (/^followers(_\d+)?\.json$/.test(basename)) {
         const content = entry.getData();
         const json = parseJson(content);
         if (json) {
@@ -51,15 +50,13 @@ export async function POST(request: Request) {
         }
       }
 
-      // Match following.json
-      if (
-        name.includes("followers_and_following/following") &&
-        name.endsWith(".json")
-      ) {
+      // Match following.json or following_1.json, etc.
+      if (/^following(_\d+)?\.json$/.test(basename)) {
         const content = entry.getData();
         const json = parseJson(content);
         if (json) {
-          allFollowing = parseFollowing(json);
+          const users = parseFollowing(json);
+          allFollowing.push(...users);
           foundFollowing = true;
         }
       }
